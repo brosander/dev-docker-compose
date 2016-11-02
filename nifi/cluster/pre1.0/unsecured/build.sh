@@ -119,6 +119,7 @@ echo "      - nifi" >> "$BASE_DIR/target/docker-compose.yml"
 echo "    volumes:" >> "$BASE_DIR/target/docker-compose.yml"
 echo "      - ./ncm:/opt/nifi-conf" >> "$BASE_DIR/target/docker-compose.yml"
 echo "      - $NIFI_ARCHIVE:/opt/nifi-archive/nifi-archive.zip" >> "$BASE_DIR/target/docker-compose.yml"
+echo "      - /dev/urandom:/dev/random" >> "$BASE_DIR/target/docker-compose.yml"
 
 for i in $(seq 1 $NUM_NODES); do
   echo  >> "$BASE_DIR/target/docker-compose.yml"
@@ -136,6 +137,7 @@ for i in $(seq 1 $NUM_NODES); do
   echo "    volumes:" >> "$BASE_DIR/target/docker-compose.yml"
   echo "      - ./node$i:/opt/nifi-conf" >> "$BASE_DIR/target/docker-compose.yml"
   echo "      - $NIFI_ARCHIVE:/opt/nifi-archive/nifi-archive.zip" >> "$BASE_DIR/target/docker-compose.yml"
+  echo "      - /dev/urandom:/dev/random" >> "$BASE_DIR/target/docker-compose.yml"
 done
 
 echo  >> "$BASE_DIR/target/docker-compose.yml"
