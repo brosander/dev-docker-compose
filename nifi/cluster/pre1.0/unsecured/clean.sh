@@ -5,6 +5,7 @@ BASE_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 if [ -z "$BASE_DIR" ]; then
   echo "Couldn't resolve basedir, exiting before scary rm -rf"
+  exit 1
 fi
 
 rm -rf "$BASE_DIR/target"
