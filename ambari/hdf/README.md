@@ -30,4 +30,5 @@ Convenience scripts:
 
 snapshot.sh - Pauses cluster containers, commits their filesystem to images, and then unpauses them.
 restore.sh - Kills and removes cluster containers, restores a previously created set of snapshot images, starts cluster containers.
+teardown.sh - Performs docker-compose down and cleans up squid if killsquid is passed in.
 socks.sh - Manages socks proxy.
