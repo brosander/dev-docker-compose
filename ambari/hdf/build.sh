@@ -13,10 +13,11 @@ SUFFIX="_compose"
 function printUsageAndExit() {
   echo "usage: $0 -m mpack_dir -p pub_key_file [-n num_target_nodes] [-a] [-h]"
   echo "       -h or --help                    print this message and exit"
-  echo "       -n or --numNodes                number of hdf nodes (default: $NUM_NODES)"
-  echo "       -m or --mpackUrl                URL of Mpack to download, only used if no mpack dir present (default: $MPACK_URL)"
   echo "       -a or --ambariUrl               URL of ambari repo (default: $AMBARI_URL)"
+  echo "       -m or --mpackUrl                URL of Mpack to download, only used if no mpack dir present (default: $MPACK_URL)"
+  echo "       -n or --numNodes                number of hdf nodes (default: $NUM_NODES)"
   echo "       -s or --suffix                  Image suffix for built images (default: $SUFFIX)"
+  exit 1
 }
 
 function buildImage() {
@@ -56,6 +57,14 @@ while [[ $# -ge 1 ]]; do
     -m|--mpackUrl)
     MPACK_URL="$2"
     shift
+    ;;
+    -h|--help)
+    printUsageAndExit
+    ;;
+    *)
+    echo "Unknown option: $key"
+    echo
+    printUsageAndExit
     ;;
   esac
   shift
@@ -111,7 +120,7 @@ echo "    hostname: gateway.ambari" >> "$BASE_DIR/target/docker-compose.yml"
 echo "    image: gateway" >> "$BASE_DIR/target/docker-compose.yml"
 echo "    restart: always" >> "$BASE_DIR/target/docker-compose.yml"
 echo "    ports:" >> "$BASE_DIR/target/docker-compose.yml"
-echo "      - \"2001:22\"" >> "$BASE_DIR/target/docker-compose.yml"
+echo "      - 22" >> "$BASE_DIR/target/docker-compose.yml"
 echo "    networks:" >> "$BASE_DIR/target/docker-compose.yml"
 echo "      - ambari" >> "$BASE_DIR/target/docker-compose.yml"
 echo "    entrypoint:" >> "$BASE_DIR/target/docker-compose.yml"
@@ -129,6 +138,8 @@ echo "    restart: always" >> "$BASE_DIR/target/docker-compose.yml"
 echo "    networks:" >> "$BASE_DIR/target/docker-compose.yml"
 echo "      - ambari" >> "$BASE_DIR/target/docker-compose.yml"
 
+docker tag ambari "ambari$SUFFIX"
+
 echo "  ambari:" >> "$BASE_DIR/target/docker-compose.yml"
 echo "    container_name: ambari" >> "$BASE_DIR/target/docker-compose.yml"
 echo "    hostname: ambari.ambari" >> "$BASE_DIR/target/docker-compose.yml"
@@ -143,11 +154,13 @@ echo "    environment:" >> "$BASE_DIR/target/docker-compose.yml"
 echo "      - YUM_PROXY=http://squid:3128" >> "$BASE_DIR/target/docker-compose.yml"
 
 for i in $(seq 1 $NUM_NODES); do
+  docker tag non-root-ambari-agent "centos6$i$SUFFIX"
+
   echo  >> "$BASE_DIR/target/docker-compose.yml"
   echo "  centos6$i:" >> "$BASE_DIR/target/docker-compose.yml"
   echo "    container_name: centos6$i" >> "$BASE_DIR/target/docker-compose.yml"
   echo "    hostname: centos6$i.ambari" >> "$BASE_DIR/target/docker-compose.yml"
-  echo "    image: non-root-ambari-agent$SUFFIX" >> "$BASE_DIR/target/docker-compose.yml"
+  echo "    image: centos6$i$SUFFIX" >> "$BASE_DIR/target/docker-compose.yml"
   echo "    restart: always" >> "$BASE_DIR/target/docker-compose.yml"
   echo "    networks:" >> "$BASE_DIR/target/docker-compose.yml"
   echo "      - ambari" >> "$BASE_DIR/target/docker-compose.yml"

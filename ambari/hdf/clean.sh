@@ -8,4 +8,8 @@ if [ -z "$BASE_DIR" ]; then
   exit 1
 fi
 
+if [ -e "$BASE_DIR/target" ]; then
+  "$BASE_DIR/target/socks.sh" stop
+fi
+
 rm -rf "$BASE_DIR/target"
