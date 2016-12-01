@@ -17,7 +17,7 @@ Example:
 ```
 ./build.sh
 cd target/
-docker-compose up -d
+./startup.sh
 
 # Will ssh into gateway container on Mac and expose localhost:1025 as a SOCKS proxy
 ./socks.sh start

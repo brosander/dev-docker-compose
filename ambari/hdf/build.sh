@@ -21,7 +21,7 @@ function printUsageAndExit() {
 }
 
 function buildImage() {
-  local TAG="$1$SUFFIX"
+  local TAG="$1"
   local CMD="docker build -t $TAG ."
   local DIR="$2"
 
@@ -31,13 +31,12 @@ function buildImage() {
     local CMD="$( echo "$3" | sed "s/TAG_ARG/$TAG/g")"
   fi
 
-  OUTPUT="$( cd "$DIR" && eval "$CMD" )"
+  (cd "$DIR" && eval "$CMD")
   if [ $? -ne 0 ]; then
-    echo "$OUTPUT"
     echo "$CMD FAILED in Directory: $DIR"
     exit 1
   else
-    echo "$CMD SUCCEEDED: $( echo "$OUTPUT" | tail -n 1 )"
+    echo "$CMD SUCCEEDED"
   fi
   echo
 }
@@ -80,7 +79,6 @@ echo
 # Dockerfile repo
 if [ ! -e "$BASE_DIR/dev-dockerfiles" ]; then
   git clone https://github.com/brosander/dev-dockerfiles.git
-  "$BASE_DIR/dev-dockerfiles/nifi/ubuntu/buildStack.sh"
 fi
 
 buildImage ambari "$BASE_DIR/dev-dockerfiles/ambari/server/centos6" "docker build --build-arg repo=\"$AMBARI_URL\" -t TAG_ARG ."
@@ -129,14 +127,6 @@ echo "      - $(cat "$BASE_DIR/ssh-key/id_rsa.pub")" >> "$BASE_DIR/target/docker
 echo "    volumes:" >> "$BASE_DIR/target/docker-compose.yml"
 echo "      - /dev/urandom:/dev/random" >> "$BASE_DIR/target/docker-compose.yml"
 echo  >> "$BASE_DIR/target/docker-compose.yml"
-
-echo "  squid:" >> "$BASE_DIR/target/docker-compose.yml"
-echo "    container_name: squid" >> "$BASE_DIR/target/docker-compose.yml"
-echo "    hostname: squid.ambari" >> "$BASE_DIR/target/docker-compose.yml"
-echo "    image: squid" >> "$BASE_DIR/target/docker-compose.yml"
-echo "    restart: always" >> "$BASE_DIR/target/docker-compose.yml"
-echo "    networks:" >> "$BASE_DIR/target/docker-compose.yml"
-echo "      - ambari" >> "$BASE_DIR/target/docker-compose.yml"
 
 docker tag ambari "ambari$SUFFIX"
 
