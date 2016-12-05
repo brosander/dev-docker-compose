@@ -6,14 +6,14 @@ After starting the cluster, it is useful to use the gateway container as a SOCKS
 
 ```
 Usage:
-  ./build.sh NIFI_ARCIVE [NUM_NIFI_NODES]      generate docker-compose config for cluster
-  ./clean.sh                                   remove target directory
-  ./clean-all.sh                               remove target directory and other resources (e.g. dev-dockerfiles)
+  ./build.sh -a NIFI_ARCIVE [-n NUM_NIFI_NODES] [-d DEBUG_PORT]      generate docker-compose config for cluster
+  ./clean.sh                                                         remove target directory
+  ./clean-all.sh                                                     remove target directory and other resources (e.g. dev-dockerfiles)
 ```
 
 Example:
 ```
-./build.sh ~/Downloads/nifi-1.0.0-bin.zip
+./build.sh -a ~/Downloads/nifi-1.0.0-bin.zip
 cd target/
 docker-compose up -d
 

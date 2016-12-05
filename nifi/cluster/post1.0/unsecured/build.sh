@@ -1,21 +1,55 @@
 #!/bin/bash
 
-if [ -z "$1" ]; then
-  echo "Must specify NiFi archive zip file to use"
+NUM_NODES="1"
+DEBUG_PORT=""
+
+function printUsageAndExit() {
+  echo "usage: $0 -m mpack_dir -p pub_key_file [-n num_target_nodes] [-a] [-h]"
+  echo "       -h or --help                    print this message and exit"
+  echo "       -a or --nifiArchive             path to Apache NiFi archive"
+  echo "       -n or --numNodes                number of NiFi nodes (default: $NUM_NODES)"
+  echo "       -d or --debug                   debug port to use (default: NONE)"
   exit 1
-fi
+}
 
-if [ -z "$2" ]; then
-  NUM_NODES="1"
-else
-  NUM_NODES="$2"
-fi
+# see https://stackoverflow.com/questions/192249/how-do-i-parse-command-line-arguments-in-bash/14203146#14203146
+while [[ $# -ge 1 ]]; do
+  key="$1"
+  case $key in
+    -a|--nifiArchive)
+    NIFI_ARCHIVE="$2"
+    shift
+    ;;
+    -n|--numNodes)
+    NUM_NODES="$2"
+    shift
+    ;;
+    -d|--debug)
+    DEBUG_PORT="$2"
+    shift
+    ;;
+    -h|--help)
+    printUsageAndExit
+    ;;
+    *)
+    echo "Unknown option: $key"
+    echo
+    printUsageAndExit
+    ;;
+  esac
+  shift
+done
 
-NIFI_ARCHIVE="$1"
+if [ -z "$NIFI_ARCHIVE" ]; then
+  echo "Must specify Apache NiFi archive (-a)"
+  echo
+  printUsageAndExit
+fi
 
 echo
 echo "Apache NiFi archive: $NIFI_ARCHIVE"
 echo "Number of nodes: $NUM_NODES"
+echo "Debug port: $DEBUG_PORT"
 echo
 
 # http://stackoverflow.com/questions/59895/can-a-bash-script-tell-which-directory-it-is-stored-in#answer-246128
@@ -43,6 +77,7 @@ mkdir -p "$BASE_DIR/target/base"
 echo "Extracting config files that need to be updated"
 NIFI_CONF_DIR="$(dirname "$(unzip -l "$NIFI_ARCHIVE" | grep "nifi.properties$" | head -n1 | awk '{print $NF}')")"
 unzip -p "$NIFI_ARCHIVE" "$NIFI_CONF_DIR/nifi.properties" > "$BASE_DIR/target/base/nifi.properties"
+unzip -p "$NIFI_ARCHIVE" "$NIFI_CONF_DIR/bootstrap.conf" > "$BASE_DIR/target/base/bootstrap.conf"
 unzip -p "$NIFI_ARCHIVE" "$NIFI_CONF_DIR/state-management.xml" > "$BASE_DIR/target/base/state-management.xml"
 unzip -p "$NIFI_ARCHIVE" "$NIFI_CONF_DIR/zookeeper.properties" > "$BASE_DIR/target/base/zookeeper.properties"
 
@@ -53,6 +88,12 @@ function setProperty() {
 echo "Creating base node directory"
 mkdir -p "$BASE_DIR/target/basenode"
 cp "$BASE_DIR/target/base/nifi.properties" "$BASE_DIR/target/basenode/nifi.properties"
+
+cp "$BASE_DIR/target/base/bootstrap.conf" "$BASE_DIR/target/basenode/bootstrap.conf"
+if [ -n "$DEBUG_PORT" ]; then
+  sed -i '' 's/#java.arg.debug=.*/java.arg.debug=-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address='"$DEBUG_PORT"'/g' "$BASE_DIR/target/basenode/bootstrap.conf"
+fi
+
 setProperty nifi.cluster.is.node true "$BASE_DIR/target/basenode/nifi.properties"
 setProperty nifi.cluster.node.protocol.port 9001 "$BASE_DIR/target/basenode/nifi.properties"
 setProperty nifi.state.management.embedded.zookeeper.start true "$BASE_DIR/target/basenode/nifi.properties"
@@ -110,6 +151,9 @@ for i in $(seq 1 $NUM_NODES); do
   echo "      - 2181" >> "$BASE_DIR/target/docker-compose.yml"
   echo "      - 2888" >> "$BASE_DIR/target/docker-compose.yml"
   echo "      - 3888" >> "$BASE_DIR/target/docker-compose.yml"
+  if [ -n "$DEBUG_PORT" ]; then
+    echo "      - $DEBUG_PORT" >> "$BASE_DIR/target/docker-compose.yml"
+  fi
   echo "      - 9001" >> "$BASE_DIR/target/docker-compose.yml"
   echo "    networks:" >> "$BASE_DIR/target/docker-compose.yml"
   echo "      - nifi" >> "$BASE_DIR/target/docker-compose.yml"
