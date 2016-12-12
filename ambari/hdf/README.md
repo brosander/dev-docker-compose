@@ -5,7 +5,7 @@ Getting a cluster running for dev-testing purposes can be tedious, this is an at
 After starting the cluster, it is useful to use the gateway container as a SOCKS proxy in order to facilitate browser usage, DNS, etc.
 
 ```
-usage: ./build.sh -m mpack_dir -p pub_key_file [-n num_target_nodes] [-a] [-h]
+usage: ./build.sh [-a ambari_url] [-m mpack_url] [-n num_target_nodes] [-s suffix]
        -h or --help                    print this message and exit
        -a or --ambariUrl               URL of ambari repo (default: http://public-repo-1.hortonworks.com/ambari/centos6/2.x/updates/2.4.0.1/ambari.repo)
        -m or --mpackUrl                URL of Mpack to download, only used if no mpack dir present (default: http://public-repo-1.hortonworks.com/HDF/centos6/2.x/updates/2.0.0.0/tars/hdf_ambari_mp/hdf-ambari-mpack-2.0.0.0-579.tar.gz)
