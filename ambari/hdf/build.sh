@@ -6,8 +6,8 @@ set -e
 BASE_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd | sed 's/\/$//g' )"
 
 NUM_NODES="3"
-AMBARI_URL="http://public-repo-1.hortonworks.com/ambari/centos6/2.x/updates/2.4.0.1/ambari.repo"
-MPACK_URL="http://public-repo-1.hortonworks.com/HDF/centos6/2.x/updates/2.0.0.0/tars/hdf_ambari_mp/hdf-ambari-mpack-2.0.0.0-579.tar.gz"
+AMBARI_URL="http://public-repo-1.hortonworks.com/ambari/centos6/2.x/updates/2.4.2.0/ambari.repo"
+MPACK_URL="http://public-repo-1.hortonworks.com/HDF/centos6/2.x/updates/2.1.0.0/tars/hdf_ambari_mp/hdf-ambari-mpack-2.1.0.0-165.tar.gz"
 SUFFIX="_compose"
 
 function printUsageAndExit() {
@@ -171,7 +171,7 @@ echo "    external: true" >> "$BASE_DIR/target/docker-compose.yml"
 
 if [ -z "$(docker network ls | awk '{print $2}' | grep '^ambari$')" ]; then
   echo "Creating ambari network"
-  docker network create --gateway 172.18.1.1 --subnet 172.18.1.0/24 nifi
+  docker network create --gateway 172.18.1.1 --subnet 172.18.1.0/24 ambari
 else
   echo "ambari network already exists, not creating"
 fi

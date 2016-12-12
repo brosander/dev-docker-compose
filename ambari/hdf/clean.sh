@@ -10,6 +10,7 @@ fi
 
 if [ -e "$BASE_DIR/target" ]; then
   "$BASE_DIR/target/socks.sh" stop
+  "$BASE_DIR/target/teardown.sh"
 fi
 
 rm -rf "$BASE_DIR/target"

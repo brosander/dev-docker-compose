@@ -7,7 +7,11 @@ BASE_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd | sed 's/\/$//g' )"
 
 cd "$BASE_DIR"
 
-IP="$(docker-machine ip)"
+if [ -z "$DOCKER_HOST" ]; then
+  IP="localhost"
+else
+  IP="$(docker-machine ip)"
+fi
 
 # http://stackoverflow.com/questions/2241063/bash-script-to-setup-a-temporary-ssh-tunnel/15198031#answer-15198031
 if [ "$1" = "start" ]; then
