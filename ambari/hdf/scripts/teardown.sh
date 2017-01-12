@@ -7,6 +7,8 @@ BASE_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd | sed 's/\/$//g' )"
 
 cd "$BASE_DIR"
 
+"$BASE_DIR/socks.sh" stop || echo "Socks wasn't running."
+
 docker-compose down
 
 if [ "killsquid" = "$1" ]; then

@@ -7,7 +7,7 @@ BASE_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd | sed 's/\/$//g' )"
 
 NUM_NODES="3"
 AMBARI_URL="http://public-repo-1.hortonworks.com/ambari/centos6/2.x/updates/2.4.2.0/ambari.repo"
-MPACK_URL="http://public-repo-1.hortonworks.com/HDF/centos6/2.x/updates/2.1.0.0/tars/hdf_ambari_mp/hdf-ambari-mpack-2.1.0.0-165.tar.gz"
+MPACK_URL="http://public-repo-1.hortonworks.com/HDF/centos6/2.x/updates/2.1.1.0/tars/hdf_ambari_mp/hdf-ambari-mpack-2.1.1.0-2.tar.gz"
 SUFFIX="_compose"
 
 function printUsageAndExit() {
