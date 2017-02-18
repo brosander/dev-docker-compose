@@ -82,7 +82,7 @@ unzip -p "$NIFI_ARCHIVE" "$NIFI_CONF_DIR/state-management.xml" > "$BASE_DIR/targ
 unzip -p "$NIFI_ARCHIVE" "$NIFI_CONF_DIR/zookeeper.properties" > "$BASE_DIR/target/base/zookeeper.properties"
 
 function setProperty() {
-  sed -i '' 's/^'"$1"'=.*$/'"$1"'='"$2"'/g' "$3"
+  sed -i.bak 's/^'"$1"'=.*$/'"$1"'='"$2"'/g' "$3"
 }
 
 echo "Creating base node directory"
@@ -91,7 +91,7 @@ cp "$BASE_DIR/target/base/nifi.properties" "$BASE_DIR/target/basenode/nifi.prope
 
 cp "$BASE_DIR/target/base/bootstrap.conf" "$BASE_DIR/target/basenode/bootstrap.conf"
 if [ -n "$DEBUG_PORT" ]; then
-  sed -i '' 's/#java.arg.debug=.*/java.arg.debug=-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address='"$DEBUG_PORT"'/g' "$BASE_DIR/target/basenode/bootstrap.conf"
+  sed -i.bak 's/#java.arg.debug=.*/java.arg.debug=-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address='"$DEBUG_PORT"'/g' "$BASE_DIR/target/basenode/bootstrap.conf"
 fi
 
 setProperty nifi.cluster.is.node true "$BASE_DIR/target/basenode/nifi.properties"
@@ -100,7 +100,7 @@ setProperty nifi.state.management.embedded.zookeeper.start true "$BASE_DIR/targe
 setProperty nifi.cluster.flow.election.max.candidates "$NUM_NODES" "$BASE_DIR/target/basenode/nifi.properties"
 
 cp "$BASE_DIR/target/base/zookeeper.properties" "$BASE_DIR/target/basenode/zookeeper.properties"
-sed -i '' 's/^server.1=$//g' "$BASE_DIR/target/basenode/zookeeper.properties"
+sed -i.bak 's/^server.1=$//g' "$BASE_DIR/target/basenode/zookeeper.properties"
 setProperty dataDir '.\/conf\/state\/zookeeper' "$BASE_DIR/target/basenode/zookeeper.properties"
 
 cp "$BASE_DIR/target/base/state-management.xml" "$BASE_DIR/target/basenode/state-management.xml"
@@ -111,7 +111,7 @@ for i in $(seq 1 $NUM_NODES); do
   CONNECT_STRING="$CONNECT_STRING,node$i.nifi:2181"
 done
 CONNECT_STRING="$(echo "$CONNECT_STRING" | sed 's/^,//g')"
-sed -i '' 's/<property name="Connect String">.*/<property name="Connect String">'"$CONNECT_STRING"'<\/property>/g' "$BASE_DIR/target/basenode/state-management.xml"
+sed -i.bak 's/<property name="Connect String">.*/<property name="Connect String">'"$CONNECT_STRING"'<\/property>/g' "$BASE_DIR/target/basenode/state-management.xml"
 setProperty nifi.zookeeper.connect.string "$CONNECT_STRING" "$BASE_DIR/target/basenode/nifi.properties"
 
 for i in $(seq 1 $NUM_NODES); do
