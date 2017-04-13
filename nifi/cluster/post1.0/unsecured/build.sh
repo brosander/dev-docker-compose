@@ -2,6 +2,7 @@
 
 NUM_NODES="1"
 DEBUG_PORT=""
+NETWORK_NAME="nifi"
 
 function printUsageAndExit() {
   echo "usage: $0 -m mpack_dir -p pub_key_file [-n num_target_nodes] [-a] [-h]"
@@ -9,6 +10,7 @@ function printUsageAndExit() {
   echo "       -a or --nifiArchive             path to Apache NiFi archive"
   echo "       -n or --numNodes                number of NiFi nodes (default: $NUM_NODES)"
   echo "       -d or --debug                   debug port to use (default: NONE)"
+  echo "             --network                 network name to use (default: $NETWORK_NAME)"
   exit 1
 }
 
@@ -26,6 +28,10 @@ while [[ $# -ge 1 ]]; do
     ;;
     -d|--debug)
     DEBUG_PORT="$2"
+    shift
+    ;;
+    --network)
+    NETWORK_NAME="$2"
     shift
     ;;
     -h|--help)
@@ -73,6 +79,9 @@ if [ -e "$BASE_DIR/target" ]; then
 fi
 
 mkdir -p "$BASE_DIR/target/base"
+cp -r "$BASE_DIR/ssh-key" "$BASE_DIR/target"
+cp -r "$BASE_DIR/support" "$BASE_DIR/target"
+cp -r "$BASE_DIR/scripts"/* "$BASE_DIR/target"
 
 echo "Extracting config files that need to be updated"
 NIFI_CONF_DIR="$(dirname "$(unzip -l "$NIFI_ARCHIVE" | grep "nifi.properties$" | head -n1 | awk '{print $NF}')")"
@@ -107,8 +116,8 @@ cp "$BASE_DIR/target/base/state-management.xml" "$BASE_DIR/target/basenode/state
 
 CONNECT_STRING=""
 for i in $(seq 1 $NUM_NODES); do
-  echo "server.$i=node$i.nifi:2888:3888" >> "$BASE_DIR/target/basenode/zookeeper.properties"
-  CONNECT_STRING="$CONNECT_STRING,node$i.nifi:2181"
+  echo "server.$i=node$i:2888:3888" >> "$BASE_DIR/target/basenode/zookeeper.properties"
+  CONNECT_STRING="$CONNECT_STRING,node$i:2181"
 done
 CONNECT_STRING="$(echo "$CONNECT_STRING" | sed 's/^,//g')"
 sed -i.bak 's/<property name="Connect String">.*/<property name="Connect String">'"$CONNECT_STRING"'<\/property>/g' "$BASE_DIR/target/basenode/state-management.xml"
@@ -117,9 +126,9 @@ setProperty nifi.zookeeper.connect.string "$CONNECT_STRING" "$BASE_DIR/target/ba
 for i in $(seq 1 $NUM_NODES); do
   echo "Configuring node$i"
   cp -r "$BASE_DIR/target/basenode" "$BASE_DIR/target/node$i"
-  setProperty nifi.web.http.host node$i.nifi "$BASE_DIR/target/node$i/nifi.properties"
-  setProperty nifi.cluster.node.address node$i.nifi "$BASE_DIR/target/node$i/nifi.properties"
-  setProperty nifi.remote.input.socket.host node$i.nifi "$BASE_DIR/target/node$i/nifi.properties"
+  setProperty nifi.web.http.host node$i "$BASE_DIR/target/node$i/nifi.properties"
+  setProperty nifi.cluster.node.address node$i "$BASE_DIR/target/node$i/nifi.properties"
+  setProperty nifi.remote.input.socket.host node$i "$BASE_DIR/target/node$i/nifi.properties"
   mkdir -p "$BASE_DIR/target/node$i/state/zookeeper"
   echo "$i" > "$BASE_DIR/target/node$i/state/zookeeper/myid"
 done
@@ -127,16 +136,32 @@ done
 echo
 echo "Generating docker-compose.yml"
 
-echo "version: '2'" > "$BASE_DIR/target/docker-compose.yml"
+echo "version: '3'" >> "$BASE_DIR/target/docker-compose.yml"
 echo "services:" >> "$BASE_DIR/target/docker-compose.yml"
+
+echo "  squid-gateway:" >> "$BASE_DIR/target/docker-compose.yml"
+echo "    container_name: ${NETWORK_NAME}-squid-gateway" >> "$BASE_DIR/target/docker-compose.yml"
+echo "    hostname: squid-gateway.$NETWORK_NAME" >> "$BASE_DIR/target/docker-compose.yml"
+echo "    image: squid-alpine" >> "$BASE_DIR/target/docker-compose.yml"
+echo "    restart: always" >> "$BASE_DIR/target/docker-compose.yml"
+echo "    ports:" >> "$BASE_DIR/target/docker-compose.yml"
+echo "      - 3128" >> "$BASE_DIR/target/docker-compose.yml"
+#echo "    networks:" >> "$BASE_DIR/target/docker-compose.yml"
+#echo "      - $NETWORK_NAME" >> "$BASE_DIR/target/docker-compose.yml"
+echo "    volumes:" >> "$BASE_DIR/target/docker-compose.yml"
+echo "      - \"$BASE_DIR/target/support/squid-gateway/:/opt/squid-conf/\"" >> "$BASE_DIR/target/docker-compose.yml"
+echo "    entrypoint:" >> "$BASE_DIR/target/docker-compose.yml"
+echo "      - /root/start.sh" >> "$BASE_DIR/target/docker-compose.yml"
+echo  >> "$BASE_DIR/target/docker-compose.yml"
+
 echo "  gateway:" >> "$BASE_DIR/target/docker-compose.yml"
-echo "    container_name: gateway" >> "$BASE_DIR/target/docker-compose.yml"
+echo "    container_name: ${NETWORK_NAME}-ssh-gateway" >> "$BASE_DIR/target/docker-compose.yml"
 echo "    image: ubuntu-openssh-server" >> "$BASE_DIR/target/docker-compose.yml"
 echo "    restart: always" >> "$BASE_DIR/target/docker-compose.yml"
 echo "    ports:" >> "$BASE_DIR/target/docker-compose.yml"
 echo "      - 22" >> "$BASE_DIR/target/docker-compose.yml"
-echo "    networks:" >> "$BASE_DIR/target/docker-compose.yml"
-echo "      - nifi" >> "$BASE_DIR/target/docker-compose.yml"
+#echo "    networks:" >> "$BASE_DIR/target/docker-compose.yml"
+#echo "      - $NETWORK_NAME" >> "$BASE_DIR/target/docker-compose.yml"
 echo "    entrypoint:" >> "$BASE_DIR/target/docker-compose.yml"
 echo "      - /root/start.sh" >> "$BASE_DIR/target/docker-compose.yml"
 echo "      - $(cat "$BASE_DIR/ssh-key/id_rsa.pub")" >> "$BASE_DIR/target/docker-compose.yml"
@@ -144,9 +169,9 @@ echo "      - $(cat "$BASE_DIR/ssh-key/id_rsa.pub")" >> "$BASE_DIR/target/docker
 for i in $(seq 1 $NUM_NODES); do
   echo  >> "$BASE_DIR/target/docker-compose.yml"
   echo "  node$i:" >> "$BASE_DIR/target/docker-compose.yml"
-  echo "    container_name: node$i" >> "$BASE_DIR/target/docker-compose.yml"
+  echo "    container_name: ${NETWORK_NAME}-node$i" >> "$BASE_DIR/target/docker-compose.yml"
+  echo "    hostname: node$i.$NETWORK_NAME" >> "$BASE_DIR/target/docker-compose.yml"
   echo "    image: nifi" >> "$BASE_DIR/target/docker-compose.yml"
-  echo "    restart: always" >> "$BASE_DIR/target/docker-compose.yml"
   echo "    ports:" >> "$BASE_DIR/target/docker-compose.yml"
   echo "      - 2181" >> "$BASE_DIR/target/docker-compose.yml"
   echo "      - 2888" >> "$BASE_DIR/target/docker-compose.yml"
@@ -155,22 +180,24 @@ for i in $(seq 1 $NUM_NODES); do
     echo "      - $DEBUG_PORT" >> "$BASE_DIR/target/docker-compose.yml"
   fi
   echo "      - 9001" >> "$BASE_DIR/target/docker-compose.yml"
-  echo "    networks:" >> "$BASE_DIR/target/docker-compose.yml"
-  echo "      - nifi" >> "$BASE_DIR/target/docker-compose.yml"
+#  echo "    networks:" >> "$BASE_DIR/target/docker-compose.yml"
+#  echo "      - $NETWORK_NAME" >> "$BASE_DIR/target/docker-compose.yml"
   echo "    volumes:" >> "$BASE_DIR/target/docker-compose.yml"
   echo "      - ./node$i:/opt/nifi-conf" >> "$BASE_DIR/target/docker-compose.yml"
   echo "      - $NIFI_ARCHIVE:/opt/nifi-archive/nifi-archive.zip" >> "$BASE_DIR/target/docker-compose.yml"
   echo "      - /dev/urandom:/dev/random" >> "$BASE_DIR/target/docker-compose.yml"
 done
 
-echo  >> "$BASE_DIR/target/docker-compose.yml"
-echo "networks:" >> "$BASE_DIR/target/docker-compose.yml"
-echo "  nifi:" >> "$BASE_DIR/target/docker-compose.yml"
-echo "    external: true" >> "$BASE_DIR/target/docker-compose.yml"
+#echo  >> "$BASE_DIR/target/docker-compose.yml"
+#echo "networks:" >> "$BASE_DIR/target/docker-compose.yml"
+#echo "  $NETWORK_NAME" >> "$BASE_DIR/target/docker-compose.yml"
+#echo "networks:" >> "$BASE_DIR/target/docker-compose.yml"
+#echo "  nifi:" >> "$BASE_DIR/target/docker-compose.yml"
+#echo "    external: true" >> "$BASE_DIR/target/docker-compose.yml"
 
-if [ -z "$(docker network ls | awk '{print $2}' | grep '^nifi$')" ]; then
-  echo "Creating nifi network"
-  docker network create --gateway 172.24.1.1 --subnet 172.24.1.0/24 nifi
-else
-  echo "nifi network already exists, not creating"
-fi
+#if [ -z "$(docker network ls | awk '{print $2}' | grep '^nifi$')" ]; then
+#  echo "Creating nifi network"
+#  docker network create --gateway 172.24.1.1 --subnet 172.24.1.0/24 nifi
+#else
+#  echo "nifi network already exists, not creating"
+#fi
