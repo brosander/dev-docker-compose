@@ -10,4 +10,4 @@ fi
 
 rm -rf "$BASE_DIR/dev-dockerfiles"
 rm -rf "$BASE_DIR/ssh-key"
-"$BASE_DIR/clean.sh"
+"$BASE_DIR/clean.sh" "$1"
