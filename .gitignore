@@ -1,3 +1,5 @@
 dev-dockerfiles/
 target/
 ssh-key/
+venv/
+*.pyc

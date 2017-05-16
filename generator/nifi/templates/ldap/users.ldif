@@ -1,0 +1,26 @@
+dn: ou=people,dc=nifi,dc=apache,dc=org
+objectclass:top
+objectclass:organizationalUnit
+ou: people
+
+dn: uid=admin,ou=people,dc=nifi,dc=apache,dc=org
+objectclass:top
+objectclass:person
+objectclass:organizationalPerson
+objectclass:inetOrgPerson
+cn: Admin
+sn: User
+uid: admin
+userPassword:{{ admin_password }}
+{% for user in users %}
+
+dn: uid={{ user.name }},ou=people,dc=nifi,dc=apache,dc=org
+objectclass:top
+objectclass:person
+objectclass:organizationalPerson
+objectclass:inetOrgPerson
+cn: {{ user.name }}
+sn: User
+uid: {{ user.name }}
+userPassword:{{ user.password }}
+{% endfor %}
