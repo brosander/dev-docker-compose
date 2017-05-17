@@ -5,7 +5,7 @@ class Docker(object):
     process = Popen(cmd, stdout = PIPE, stderr = PIPE)
     result = process.communicate()
     if process.returncode != 0:
-      raise Exception('Error running command ' + str(command) + ' stdout: ' + str(result[0]) + ' stderr : ' + str(result[1]))
+      raise Exception('Error running command ' + str(cmd) + ' stdout: ' + str(result[0]) + ' stderr : ' + str(result[1]))
     return result[0]
 
   def find(self, image, path, base_dir = '/', typeArg = None):

@@ -162,7 +162,6 @@ class NifiCluster(Generator):
     super(NifiCluster, self).handle_cli()
     self.nifi_names = ['nifi-node' + str(i) for i in range(1, self.args.nifiNodes + 1)]
     self.nifi_conf_dir = os.path.dirname(self.docker.find(self.args.nifiImage, '*/conf/nifi.properties', '/opt', 'f')[0])
-    self.generate_resources()
 
 if __name__ == '__main__':
   NifiCluster().generate()

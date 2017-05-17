@@ -5,46 +5,28 @@ import shutil
 
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 from collections import OrderedDict
+from yaml import Yaml
 
-class Generator(object):
+class Generator(Yaml):
   def render(self, output_filename):
     data = self.get_compose_data()
     if not data:
       return
     with open(output_filename, 'w') as f:
-      self.__print("version: '3'", f)
-      self.__print("", f)
-      self.__render(data, '', f)
+      self._print("version: '3'", f)
+      self._print("", f)
+      super(Generator, self).render(f, data)
 
   def get_compose_data(self):
     return None
 
-  def __print(self, data, f):
-    f.write(data)
-    f.write('\n')
-
-  def __render(self, data, prefix, f):
-    if hasattr(data, 'iteritems'):
-      for key, value in data.iteritems():
-        if hasattr(value, 'iteritems') or hasattr(value, '__iter__'):
-          if len(value) > 0:
-            self.__print(prefix + key + ':', f)
-            self.__render(value, ''.join([' ' for i in range(len(prefix) + 2)]), f)
-          elif hasattr(value, 'iteritems'):
-            self.__print(prefix + key + ': {}', f)
-          else:
-            self.__print(prefix + key + ': []', f)
-        else:
-          self.__print(prefix + key + ': ' + str(value), f)
-    elif hasattr(data, '__iter__'):
-      for item in data:
-        self.__render(item, ''.join([' ' for i in range(len(prefix))]) + '- ', f)
-    else:
-      self.__print(prefix + str(data), f)
-
   def generate(self):
     self.handle_cli()
+    self.generate_resources()
     self.render(os.path.join(self.args.output, 'docker-compose.yml'))
+
+  def generate_resources(self):
+    pass
 
   def get_parser(self):
     parser = ArgumentParser(description = 'Utility to generate docker-compose files and associated resources for dev-testing clustered things.',
